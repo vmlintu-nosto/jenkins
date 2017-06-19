@@ -74,9 +74,15 @@ module Jenkins
       command << %(-jar "#{options[:cli]}")
       command << %(-s #{URI.escape(options[:endpoint])}) if options[:endpoint]
       command << %(-"#{options[:protocol]}")             if options[:protocol]
-      command << %(-user "#{options[:cli_user]}")        if options[:cli_user]
       command << %(-i "#{options[:key]}")                if options[:key]
       command << %(-p #{uri_escape(options[:proxy])})    if options[:proxy]
+      if options[:cli_user]
+        if options[:protocol] == 'http' && options[:api_token]
+          command << %(-auth "#{options[:cli_user]}:#{options[:api_token]}")
+        else
+          command << %(-user "#{options[:cli_user]}")
+        end
+      end
       command.push(pieces)
       command << %(--username "#{options[:username]}")   if options[:username]
       command << %(--password "#{options[:password]}")   if options[:password]

@@ -73,6 +73,7 @@ EOH
         h[:jvm_options] = jvm_options unless jvm_options.nil?
         h[:protocol] = protocol unless protocol.nil?
         h[:cli_user] = cli_user unless cli_user.nil?
+        h[:api_token] = api_token unless api_token.nil?
       end
 
       Jenkins::Executor.new(options)
@@ -369,6 +370,15 @@ EOH
     #
     def protocol
       node['jenkins']['executor']['protocol']
+    end
+
+    #
+    # API Token to use with http protocol and -auth along with cli_user
+    #
+    # @return [String]
+    #
+    def api_token
+      node['jenkins']['executor']['api_token']
     end
 
     #
