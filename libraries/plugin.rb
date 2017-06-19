@@ -47,6 +47,12 @@ class Chef
     attribute :install_deps,
               kind_of: [TrueClass, FalseClass],
               default: true
+    attribute :install_latest_deps,
+              kind_of: [TrueClass, FalseClass],
+              default: false
+    attribute :direct_install,
+              kind_of: [TrueClass, FalseClass],
+              default: false
     attribute :options,
               kind_of: String
 
@@ -118,14 +124,17 @@ EOH
             new_resource.source,
             new_resource.name,
             nil,
-            cli_opts: new_resource.options
+            cli_opts: new_resource.options,
+            install_latest_deps: new_resource.install_latest_deps
           )
         else
           install_plugin_from_update_center(
             new_resource.name,
             new_resource.version,
             cli_opts: new_resource.options,
-            install_deps: new_resource.install_deps
+            install_deps: new_resource.install_deps,
+            install_latest_deps: new_resource.install_latest_deps,
+            direct_install: new_resource.direct_install
           )
         end
       end
@@ -266,7 +275,14 @@ EOH
       # comparisons.
       latest_version = plugin_version(remote_plugin_data['version'])
 
-      # Brute-force install all dependencies
+      # If we want to install the latest version of the plugin with latest dependencies,
+      # we can just call install-plugin with the shortname to skip downloading all
+      # dependencies.
+      if plugin_version == :latest && opts[:install_deps] && opts[:install_latest_deps] && opts[:direct_install]
+        return executor.execute!('install-plugin', escape(plugin_name), opts[:cli_opts])
+      end
+
+      # If something else is wanted, loop the dependencies and install the exact versions
       if opts[:install_deps] && remote_plugin_data['dependencies'].any?
         Chef::Log.debug "Installing plugin dependencies for #{plugin_name}"
 
@@ -277,7 +293,15 @@ EOH
             next
           elsif dep['optional'] == false
             # only install required dependencies
-            install_plugin_from_update_center(dep['name'], dep['version'], opts)
+            if opts[:install_latest_deps]
+              if opts[:direct_install]
+                executor.execute!('install-plugin', escape(dep['name']), opts[:cli_opts])
+              else
+                install_plugin_from_update_center(dep['name'], :latest, opts)
+              end
+            else
+              install_plugin_from_update_center(dep['name'], dep['version'], opts)
+            end
           end
         end
       end
