@@ -143,7 +143,7 @@ module Jenkins
       file = Tempfile.new('groovy')
       file.write script
       file.flush
-      execute!("groovy #{file.path}")
+      execute!("groovy = <#{file.path}")
     ensure
       file.close! if file
     end
@@ -157,7 +157,7 @@ module Jenkins
       file = Tempfile.new('groovy')
       file.write script
       file.flush
-      execute("groovy #{file.path}")
+      execute("groovy = <#{file.path}")
     ensure
       file.close! if file
     end
